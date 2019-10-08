@@ -1,0 +1,82 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+
+/* html{
+  scroll-behavior: smooth;
+} */
+
+section {
+  padding: 60px 0;
+}
+
+/* Header */
+header{
+  background-image: url("home.jpg");
+  height: 100vh;
+  width: 100%;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+#navbarNav{
+  margin-left: 60%;
+}
+.navbar{
+  font-family: "Roboto", sans-serif;
+}
+.navcolor{
+  background: rgba(11, 7, 29, 0.8);
+  width: 100%;
+}
+.insideheader{
+  position: absolute;
+  width: 100%;
+  margin-left: 0px;
+  margin-top: 150px;
+  text-align: center;
+}
+.responsive{
+  max-width: 100%;
+  height: auto;
+}
+.insideheader button{
+  font-family: "Roboto", sans-serif;
+  padding: 10px;
+  height: 44px;
+}
+.insideheader button a{
+  color: white;
+  text-decoration: none;
+}
+.insideheader button a:hover{
+  color: grey;
+}
+@media screen and (max-width: 1024px){
+  .insideheader button{
+    margin-left: 0%;
+  }
+}
+@media screen and (max-width: 768px){
+  .insideheader button{
+    margin-left: 0%;
+  }
+}
+.insideheader button a i{
+  font-size: 20px;
+  color: grey;
+}
+
+/* Footer */
+.footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-color: #2d3246;
+  color: white;
+  text-align: center;
+  font-family: "Roboto", sans-serif;
+}
