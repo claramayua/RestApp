@@ -1,4 +1,5 @@
 <?php
+  //Setting up session
   session_start();
 ?>
   
@@ -21,15 +22,37 @@
   </head>
 
   <body>
-<?php
-  $msg = "";
-?>
 
 <?php
-  $fullname = "";
-  if(isset($_SESSION["login_officer"])) {
-    $fullname = $_SESSION["login_fullname"];
-	$username = $_SESSION["login_officer"];
+  //Check login session whether it is an applicant or officer
+  //this to make sure page is accessed manually using its url
+  $loginfullname = "";
+  if(isset($_SESSION["login_userID"])) {
+    $loginuserID = $_SESSION["login_userID"];
+	$host = "localhost";
+	$dbUsername = "root";
+	$dbPassword = "";
+	$dbname = "restapp";
+	//create connection
+	$conn = new mysqli($host, $dbUsername, $dbPassword, $dbname);
+	if (mysqli_connect_error()) {
+		$msg = "Connection Error!";
+		die('Connect Error('. mysqli_connect_errno().')'. mysqli_connect_error());
+	}
+	else {
+		$SELECT = "SELECT staffID From user Where userID = '".$loginuserID."' Limit 1";
+		$stmt = $conn->query($SELECT);
+		if ($stmt->num_rows > 0) {
+			while($row = $stmt->fetch_assoc()) {
+				if(!empty($row["staffID"]))
+					$loginfullname = $_SESSION["login_fullname"];
+				else {
+					session_destroy();
+					header('Location: http://localhost/restapp/login.php');
+				}
+			}
+		}
+	}		
   }
   else {
     session_destroy();
@@ -47,10 +70,10 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="link ml-auto navbar-nav">
 			<li class="nav-item">
-              <a class="nav-link" href="viewoff.php">View Applications</a>
+              <a class="nav-link" href="viewressetroomname.php">Set Room Name</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="allocate.php">Allocate Housing</a>
+              <a class="nav-link" href="allocate.php">Application & Allocation</a>
             </li>
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Account</a>
@@ -63,47 +86,101 @@
       </nav>
       <!-- End Navbar -->
     </header>
+
 <?php
+//Get the data from the input form including image file
+//Save into the database
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  $name = $_POST['name'];
-  $address = $_POST['address'];
-  $area = $_POST['area'];
-  $numUnits = $_POST['numUnits'];
-  $sizePerUnit = $_POST['sizePerUnit'];
-  $monthlyRental = $_POST['monthlyRental'];
-  if (!empty($name) && !empty($address) && !empty($area) && !empty($numUnits) && !empty($sizePerUnit) && !empty($monthlyRental)) {
-	$host = "localhost";
-	$dbUsername = "root";
-	$dbPassword = "";
-	$dbname = "restapp";
-	//create connection
-	$conn = new mysqli($host, $dbUsername, $dbPassword, $dbname);
-	if (mysqli_connect_error()) {
-		$msg = "Connection Error!";
-		die('Connect Error('. mysqli_connect_errno().')'. mysqli_connect_error());
+	$name = $_POST['name'];
+	$address = $_POST['address'];
+	$area = $_POST['area'];
+	$numUnits = $_POST['numUnits'];
+	$sizePerUnit = $_POST['sizePerUnit'];
+	$monthlyRental = $_POST['monthlyRental'];
+  
+	$target_dir = "pictures/";
+	$target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
+	echo $target_file;
+	$uploadOk = 1;
+	$imageFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));
+	// Check if image file is a actual image or fake image
+	if(isset($_POST["submit"])) {
+		$check = getimagesize($_FILES["fileToUpload"]["tmp_name"]);
+		if($check !== false) {
+			echo "File is an image - " . $check["mime"] . ".";
+			$uploadOk = 1;
+		} else {
+			echo "File is not an image.";
+			$uploadOk = 0;
+		}
+	}
+	
+	// Check if file already exists
+	if (file_exists($target_file)) {
+		echo "Sorry, file already exists.";
+		$uploadOk = 0;
+	}
+	
+	// Check file size
+	//if ($_FILES["fileToUpload"]["size"] > 500000) {
+	//	echo "Sorry, your file is too large.";
+	//	$uploadOk = 0;
+	//}
+	
+	// Allow certain file formats
+	if($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg" && $imageFileType != "gif" ) {
+		echo "Sorry, only JPG, JPEG, PNG & GIF files are allowed.";
+		$uploadOk = 0;
+	}
+	
+	// Check if $uploadOk is set to 0 by an error
+	//if ($uploadOk == 0) {
+	//	echo "Sorry, your file was not uploaded.";
+	// if everything is ok, try to upload file
+	//} else {
+	//	if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
+	//		echo "The file ". basename( $_FILES["fileToUpload"]["name"]). " has been uploaded.";
+	//	} else {
+	//		echo "Sorry, there was an error uploading your file.";
+	//	}
+	//}
+  
+	if (!empty($name) && !empty($address) && !empty($area) && !empty($numUnits) && !empty($sizePerUnit) && !empty($monthlyRental) && $uploadOk == 1) {
+		$host = "localhost";
+		$dbUsername = "root";
+		$dbPassword = "";
+		$dbname = "restapp";
+		//create connection
+		$conn = new mysqli($host, $dbUsername, $dbPassword, $dbname);
+		if (mysqli_connect_error()) {
+			$msg = "Connection Error!";
+			die('Connect Error('. mysqli_connect_errno().')'. mysqli_connect_error());
+		}
+		else {
+			move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file);
+			$INSERT = "INSERT Into residence (name, address, area, numUnits, sizePerUnit, monthlyRental, picture) values(?, ?, ?, ?, ?, ?, ?)";
+			//prepare statement
+			$stmt = $conn->prepare($INSERT);
+			$stmt->bind_param("ssiiiis", $name, $address, $area, $numUnits, $sizePerUnit, $monthlyRental, $target_file);
+			$stmt->execute();
+			$stmt->close();
+			$conn->close();
+			header('Location: http://localhost/restapp/menuoff.php');
+		}
 	}
 	else {
-		$INSERT = "INSERT Into residence (name, address, area, numUnits, sizePerUnit, monthlyRental) values(?, ?, ?, ?, ?, ?)";
-		//prepare statement
-		$stmt = $conn->prepare($INSERT);
-		$stmt->bind_param("ssiiii", $name, $address, $area, $numUnits, $sizePerUnit, $monthlyRental);
-		$stmt->execute();
-		$stmt->close();
-		$conn->close();
-		header('Location: http://localhost/restapp/menuoff.php');
+		$msg = "Please fill all fields and check the inputs!";
+		die();
 	}
 }
-else {
-	$msg = "Please fill all fields!";
-	die();
-}
-}
-?>	
+?>
+	
     <!-- Start Set Residence -->
 	<section id="section-form" class="container-fluid">
 	  <center><h2 class="pb-3 pt-2 border-bottoms">Set Residence</h2></center>
 	  <div class="form-style">
-		<form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="POST" class="was-validated">
+		<form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="POST" class="was-validated" enctype="multipart/form-data">
 		<fieldset>
 			<legend><span class="number">1</span>Name</legend>
 			<input type="text" class="form-control" id="inputName" placeholder="Name" name="name" required>
@@ -145,6 +222,10 @@ else {
 		<fieldset>
 			<legend><span class="number">6</span>Monthly Rental</legend>
 			<input type="number" class="form-control" id="inputmRental" placeholder="Monthly Rental" name="monthlyRental" required>
+		</fieldset>
+		<fieldset>
+			<legend><span class="number">7</span>Picture</legend>
+			<input type="file" class="form-control" id="fileToUpload" placeholder="Picture" name="fileToUpload" required>
 		</fieldset>
 		<input type="submit" value="Submit" />
 		</form>

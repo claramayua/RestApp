@@ -1,3 +1,7 @@
+<?php
+  session_start();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -47,7 +51,7 @@
         <img class="responsive" src="welcome.png" alt="welcome">
         <center>
           <button type="button" class="btn btn-dark">
-            <a href="#section-residence">Rent A Residence</a>
+            <a href="#section-residence">View Residence</a>
           </button>
         </center>
       </div>
@@ -64,17 +68,72 @@
 						<div class="col-md-12">
 							<!--PRICE HEADING START-->
 							<div class="price-heading clearfix">
-								<h1 style="color: white">RESIDENCES</h1>
+								<h1 style="color: white">View Residence</h1>
 							</div>
 							<!--//PRICE HEADING END-->
 						</div>
+
+<?php 
+    // Setting mailer dan sending email to requester
+
+	// Import PHPMailer classes into the global namespace
+	// These must be at the top of your script, not inside a function
+	use PHPMailer\src\PHPMailer;
+	use PHPMailer\src\SMTP;
+	use PHPMailer\src\Exception;
+	
+	if(isset($_POST['submit'])){
+		$to = "claramayua.cm@gmail.com"; // this is your Email address
+		$from = $_POST['email']; // this is the sender's Email address
+		$name = $_POST['name'];
+		$subject = $_POST['subject'];
+		$message = $name . " wrote the following:" . "\n\n" . $_POST['message'];
+		
+		
+
+		// Instantiation and passing `true` enables exceptions
+		$mail = new PHPMailer(true);
+
+		try {
+			//Server settings
+			$mail->SMTPDebug = SMTP::DEBUG_SERVER;                      // Enable verbose debug output
+			$mail->isSMTP();                                            // Send using SMTP
+			$mail->Host       = 'smtp.gmail.com';                    	// Set the SMTP server to send through
+			$mail->SMTPAuth   = true;                                   // Enable SMTP authentication
+			$mail->Username   = $to;                     				// SMTP username
+			$mail->Password   = 'password';                             // SMTP password
+			$mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;         // Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` also accepted
+			$mail->Port       = 587;                                    // TCP port to connect to
+
+			//Recipients
+			$mail->setFrom($from, 'Mailer');
+			$mail->addAddress($to, 'Ni Putu Clara Mayu Agusta');     	// Add a recipient
+			$mail->addReplyTo($from, $name);
+			$mail->addCC($to);
+
+			// Content
+			$mail->isHTML(true);                                  		// Set email format to HTML
+			$mail->Subject = $subject;
+			$mail->Body    = $message;
+			
+			$mail->send();
+		} catch (Exception $e) {
+			echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+		}
+    }
+?>
+
 <?php
+  //Setting up the value shown in list of residences without applying capability
+  $residenceID_array = array();
   $name_array = array();
   $area_array = array();
   $address_array = array();
   $monthlyrental_array = array();
   $size_array = array();
   $unit_array = array();
+  $picture_array = array();
+  $remainedUnit_array = array();
   $host = "localhost";
   $dbUsername = "root";
   $dbPassword = "";
@@ -90,18 +149,26 @@
 	//prepare statement
 	$stmt = $conn->query($SELECT);
 	if ($stmt->num_rows > 0)
-		while ($row = $stmt->fetch_assoc()) {
+		while ($row = $stmt->fetch_assoc()) {  
+		  array_push($residenceID_array, $row["residenceID"]);
 		  array_push($name_array, $row["name"]);
 		  array_push($address_array, $row["address"]);
 		  array_push($area_array, $row["area"]);
 		  array_push($unit_array, $row["numUnits"]);
 		  array_push($size_array, $row["sizePerUnit"]);
 		  array_push($monthlyrental_array, $row["monthlyRental"]);
+		  array_push($picture_array, $row["picture"]);
 		}
 	$stmt->close();
+	for ($i = 0; $i < count($unit_array); $i=$i+1) {
+		$SELECT = "SELECT * From roomname Where residenceID = '".$residenceID_array[$i]."' AND status = '1'";
+		$stmt = $conn->query($SELECT);
+		array_push($remainedUnit_array, $stmt->num_rows);
+	}
 	$conn->close();
  }
  
+ //Looping for the content of the residence list
  for ($i = 0; $i < count($name_array); $i=$i+3) {
    for ($j = 0; $j < 3 && ($j+$i) < count($name_array); $j++) { 
 ?>
@@ -129,9 +196,7 @@
 									<!--PRICE START-->
 									<div class="generic_price_tag clearfix">	
 										<span class="price">
-											<span class="sign">RM</span>
-											<span class="currency"><?php echo $monthlyrental_array[$i+$j] ?></span>
-											<span class="month">/MONTH</span>
+											<img src=<?php echo $picture_array[$i+$j] ?> alt="Residence Image" height="200" width="300"/>
 										</span>
 									</div>
 									<!--//PRICE END-->
@@ -143,17 +208,24 @@
 								<div class="generic_feature_list">
 									<ul>
 										<li><span><?php echo $address_array[$i+$j] ?></span></li>
+										<li><span><?php echo $monthlyrental_array[$i+$j] ?></span> / month</li>
 										<li><span><?php echo $size_array[$i+$j] ?></span> sq. ft.</li>
-										<li><span>Available Unit:</span> <?php echo $unit_array[$i+$j] ?> units</li>
+<?php
+  //Setting the value for the units available
+  if ($remainedUnit_array[$i+$j] != 0) {
+?>
+										<li><span><?php echo $remainedUnit_array[$i+$j] ?> out of <?php echo $unit_array[$i+$j] ?> units available.</span></li>
+<?php
+  }
+  else {
+?>
+										<li><span>No more unit available.</span></li>
+<?php
+  }
+?>
 									</ul>
 								</div>
 								<!--//FEATURE LIST END-->
-								
-								<!--BUTTON START-->
-								<div class="generic_price_btn clearfix">
-									<a class="" href="signup.php">Apply</a>
-								</div>
-								<!--//BUTTON END-->
 								
 							</div>
 							<!--//PRICE CONTENT END-->
@@ -181,6 +253,7 @@
 		</div>		
 	</section>
 	<!-- End View Residence -->
+
 	
 	  <!-- Start About Us -->
     <section id="section-aboutus">
@@ -286,30 +359,14 @@
 			        <p>Fill up the form below and we'll get back to you as soon as possible.</p>
             </div>
 			      <div class="form-contact">
-				      <form method="POST" action="mailto:claramayua.cm@gmail.com" enctype="text/plain" class="was-validated">
+				      <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="POST" class="was-validated">
 					      <input type="text" name="name" class="form-control" id="name" placeholder="Name" required>
 				        <input type="email" name="email" class="form-control" id="email" placeholder="Email" required>
 					      <input type="text" name="subject" class="form-control" id="subject" placeholder="Subject" required>
 					      <textarea class="form-control" name="message" placeholder="Message" required></textarea>
-				        <input type="button" onclick="return check(this.form)" value="Send Message" />
+				        <input type="submit" value="Send Message" />
 				      </form>
 			      </div>
-				  <script>
-					function check(form)
-					{
-
-					if(form.name.value != "" && form.email.value != "" && form.subject.value != "" && form.message.value != "")
-					{
-						alert("Message submitted successfully!")
-						return true;
-					}
-					else
-					{
-						alert("Please fill all fields!")
-						return false;
-					}
-					}
-					</script>
           </div>
         </div>
       </div>

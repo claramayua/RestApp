@@ -13,7 +13,7 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
-    <link rel="stylesheet" href="menu.css" type="text/css">
+    <link rel="stylesheet" href="form.css" type="text/css">
 	<link rel="icon" href="favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
@@ -60,18 +60,18 @@
   }
 ?>
 
-  <header id="header">
+    <header id="header">
       <!-- Start Navbar -->
       <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <a class="navbar-brand" href="menuoff.html"><b>RestApp</b></a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="link ml-auto navbar-nav">
             <li class="nav-item">
-				<a class="nav-link" id="welcome" style="color: white"><b>Welcome <i><?php echo $loginfullname ?></i></b></a>
-			</li>
+              <a class="nav-link" href="allocate.php">Application $ Allocation</a>
+            </li>
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="account.html" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Account</a>
 			  <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink">
@@ -82,23 +82,143 @@
         </div>
       </nav>
       <!-- End Navbar -->
-      <div class="insideheader">
-        <img class="responsive" src="welcome.png" alt="home">
-        <center>
-		  <h2 class="pb-3 pt-2 border-bottoms">Housing Officer!</h2>
-          <button type="button" class="btn btn-dark">
-            <a href="setres.php">Set Residence</a>
-          </button>
-		  <button type="button" class="btn btn-dark">
-			<a href="viewressetroomname.php">Set Room Name</a>
-          </button>
-		  <button type="button" class="btn btn-dark">
-			<a href="allocate.php">View Applications and Allocate Room</a>
-          </button>
-        </center>
-      </div>
     </header>
-     
+
+<?php
+  //Getting the application to be shown
+  $chosen = $_SESSION['chosen_application'];
+  $host = "localhost";
+  $dbUsername = "root";
+  $dbPassword = "";
+  $dbname = "restapp";
+  //create connection
+  $conn = new mysqli($host, $dbUsername, $dbPassword, $dbname);
+  if (mysqli_connect_error()) {
+	$msg = "Connection Error!";
+	die('Connect Error('. mysqli_connect_errno().')'. mysqli_connect_error());
+  }
+  else {
+	$SELECT = "SELECT userID, residenceID, requiredDate, endDate, roomID From submitapp Where submitappID = ? Limit 1";
+	//prepare statement
+	$stmt = $conn->prepare($SELECT);
+	$stmt->bind_param("i", $chosen);
+	$stmt->execute();
+	$stmt->store_result();
+	$rnum = $stmt->num_rows;
+	if ($rnum > 0) {
+		$stmt->bind_result($userID, $residenceID, $requiredDate, $endDate, $roomID);
+		$stmt->fetch();
+	}
+	$stmt->close();
+	$SELECT = "SELECT fullname, monthlyIncome From user Where userID = ? Limit 1";
+	//prepare statement
+	$stmt = $conn->prepare($SELECT);
+	$stmt->bind_param("i", $userID);
+	$stmt->execute();
+	$stmt->store_result();
+	$rnum = $stmt->num_rows;
+	if ($rnum > 0) {
+		$stmt->bind_result($fullname, $monthlyIncome);
+		$stmt->fetch();
+	}
+	$stmt->close();
+	$SELECT = "SELECT name From residence Where residenceID = ? Limit 1";
+	//prepare statement
+	$stmt = $conn->prepare($SELECT);
+	$stmt->bind_param("i", $residenceID);
+	$stmt->execute();
+	$stmt->store_result();
+	$rnum = $stmt->num_rows;
+	if ($rnum > 0) {
+		$stmt->bind_result($name);
+		$stmt->fetch();
+	}
+	$stmt->close();
+	$conn->close();
+  }
+?>
+
+<?php
+//Get the data from the input form
+//Update the status and rejection note into the database
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+	$reason = $_POST['reason'];
+    $host = "localhost";
+	$dbUsername = "root";
+	$dbPassword = "";
+	$dbname = "restapp";
+	//create connection
+		
+	$conn = new mysqli($host, $dbUsername, $dbPassword, $dbname);
+	if (mysqli_connect_error()) {
+		$msg = "Connection Error!";
+		die('Connect Error('. mysqli_connect_errno().')'. mysqli_connect_error());
+	}
+	else {
+		$UPDATE = "UPDATE submitapp SET rejectionNote = '".$reason."', status='REJECTED' WHERE submitappID = '".$chosen."'";
+		//prepare statement
+		$conn->query($UPDATE);
+		unset($_REQUEST['reject']);
+		header('Location: http://localhost/restapp/allocate.php');
+	}
+	$conn->close();
+}
+?>
+
+    <!-- Start Allocate Housing Form -->
+	<section id="section-form" class="container-fluid">
+      <center><h2 class="pb-3 pt-2 border-bottoms">Application Rejection Form</h2></center>
+	  <div class="form-style">
+		<form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="POST" class="was-validated">
+		<fieldset>
+			<legend><span class="number">1</span>Residence Name</legend>
+			<pre><?php echo $name; ?></pre>      
+		</fieldset>
+		<fieldset>
+			<legend><span class="number">2</span>Applicant Name</legend>
+			<pre><?php echo $fullname; ?></pre>      
+		</fieldset>
+		<fieldset>
+			<legend><span class="number">3</span>Monthly Income</legend>
+			<pre><?php echo $monthlyIncome; ?></pre>
+		</fieldset>
+		<fieldset>
+			<legend><span class="number">4</span>Required Date</legend>
+			<pre><?php echo $requiredDate; ?></pre>
+		</fieldset>
+		<fieldset>
+			<legend><span class="number">5</span>End Date</legend>
+			<pre><?php echo $endDate; ?></pre>
+		</fieldset>
+		<fieldset>
+			<legend><span class="number">6</span>Reason for Rejection</legend>
+			<textarea rows="5" cols="55" name="reason"></textarea>
+		</fieldset>
+		</br>
+		<input type="submit" value="Submit" />
+		</form>
+		<script>
+			function check(form)
+			{
+
+			if(form.rid.value != "" && form.name.value != "" && form.uno.value != "" && form.fdate.value != "")
+			{
+				alert("Submit Allocate Housing Form Successfully!")
+				window.location = "allocate.html";
+				return true;
+			}
+			else
+			{
+				alert("Please fill all fields!")
+				return false;
+			}
+			}
+		</script>
+	  </div>
+    </section>
+    <!-- End Allocate Housing Form -->
+      
     <!-- Start Footer -->
 	<div class="footer">
 		<small><i>Copyright &copy; 2019 RestApp</i></small>
