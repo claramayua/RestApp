@@ -32,7 +32,6 @@
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Account</a>
 			  <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink">
-				<a class="dropdown-item" href="signup.php">Sign Up</a>
 				<a class="dropdown-item" href="login.php">Login</a>
 			  </div>
             </li>
@@ -41,7 +40,10 @@
       </nav>
       <!-- End Navbar -->
     </header>
+
 <?php
+//Get the data from the input form
+//Save into the database
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 $username = $_POST['username'];
 $password = $_POST['password'];
@@ -74,6 +76,7 @@ if (!empty($username) || !empty($password) || !empty($fullname) || !empty($email
 			$stmt = $conn->prepare($INSERT);
 			$stmt->bind_param("ssssi", $username, $password, $fullname, $email, $monthlyIncome);
 			$stmt->execute();
+			$msg = "Sign Up Successfully!";
 			header('Location: http://localhost/restapp/login.php');
 		}
 		else {
@@ -115,9 +118,9 @@ else {
 			<input type="number" class="form-control" id="inputmIncome" placeholder="Monthly Income" name="monthlyIncome" required>
 		</fieldset>
 		<span class="error" style="color: red; font-family: Courier"><b><?php echo $msg;?></b></span>
-		<br><br>
+		<br>
 		<div class="form-check">
-			<input class="form-check-input" type="checkbox" id="gridCheck">
+			<input class="form-check-input" type="checkbox" id="gridCheck" required>
 			<label class="form-check-label" for="gridCheck">
 			I agree to the Terms of Use of RestApp.<br><br>
 			</label>

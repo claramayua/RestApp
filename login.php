@@ -38,8 +38,8 @@
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Account</a>
 			  <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink">
-				<a class="dropdown-item" href="signup.php">Sign Up</a>
-				<a class="dropdown-item" href="login.php">Login</a>
+				<a class="dropdown-item" href="/restapp/signup.php">Sign Up</a>
+				<a class="dropdown-item" href="/restapp/login.php">Login</a>
 			  </div>
             </li>
           </ul>
@@ -49,6 +49,8 @@
     </header>
 
 <?php
+  //Get the username and password from the input form
+  //Check with the user data and if they are match, the user can login
   if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $inputusername = $_POST['username'];
     $inputpassword = $_POST['password'];
@@ -64,25 +66,25 @@
 		die('Connect Error('. mysqli_connect_errno().')'. mysqli_connect_error());
 	  }
 	  else {
-		$SELECT = "SELECT password, fullname, staffID From user Where username = ? Limit 1";
+		$SELECT = "SELECT userID, password, fullname, staffID From user Where username = ? && password = ? Limit 1";
 		//prepare statement
 		$stmt = $conn->prepare($SELECT);
-		$stmt->bind_param("s", $inputusername);
+		$stmt->bind_param("ss", $inputusername, $inputpassword);
 		$stmt->execute();
 		$stmt->store_result();
 		$rnum = $stmt->num_rows;
 		if ($rnum > 0) {
-			$stmt->bind_result($password, $fullname, $staffID);
+			$stmt->bind_result($userID, $password, $fullname, $staffID);
 			$stmt->fetch();
 			if ($inputpassword === $password) {
 				$inputfullname = $fullname;
+				$inputuserID = $userID;
 				$_SESSION["login_fullname"] = $inputfullname;
+				$_SESSION["login_userID"] = $inputuserID;
 				if (!empty($staffID)) {
-				  $_SESSION["login_officer"] = $inputusername;
 				  header('Location: http://localhost/restapp/menuoff.php'); 
 				}
 				else {
-				  $_SESSION["login_applicant"] = $inputusername;
 				  header('Location: http://localhost/restapp/menuapp.php');
 				}
 			}
@@ -117,23 +119,12 @@ else {
 			<input type="password" class="form-control" id="inputPassword" placeholder="Password" name="password" required>
 		</fieldset>
 		<span class="error" style="color: red; font-family: Courier"><b><?php echo $msg;?></b></span>
-		<br><br>
+		<br>
 		<input type="submit" value="Login" />
 		</form>
 		<p>
 			<a href="signup.php" style="color:#1abc9c"><center><b>Don't have an account? Click here to sign up.</b></center></a>
 		</p>
-		<script>
-			function check(form)
-			{
-
-			if(form.username.value == "" || form.password.value == "" || form.fullname.value == "" || form.email.value == "" || form.mincome.value == "")
-			{				
-				alert("Please fill all fields!")
-				return false;
-			}
-			}
-		</script>
 		</div>
 	</section>
     <!-- End Login -->

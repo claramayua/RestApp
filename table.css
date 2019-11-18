@@ -1,0 +1,53 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+
+/* html{
+  scroll-behavior: smooth;
+} */
+
+section {
+  padding: 60px 0;
+}
+
+/* Header */
+#navbarNav{
+  margin-left: 60%;
+}
+.navbar{
+  font-family: "Roboto", sans-serif;
+}
+.navcolor{
+  background: rgba(11, 7, 29, 0.8);
+  width: 100%;
+}
+.dropdown-menu{
+	background-color: rgba(11, 7, 29, 0.8);
+	opacity: .8;
+}
+.dropdown-item{
+	color: white;
+}
+
+/* Table */
+#section-table{
+  background-image: url("cover.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+#section-table h2{
+  color: black;
+}
+
+/* Footer */
+.footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-color: #2d3246;
+  color: white;
+  text-align: center;
+  font-family: "Roboto", sans-serif;
+}
