@@ -61,6 +61,7 @@ section {
 .form-style input[type="email"],
 .form-style input[type="number"] ,
 .form-style input[type="password"],
+.form-style input[type="date"],
 .form-style select {
 	font-family: "Roboto", sans-serif;
 	background: rgba(255,255,255,.1);
@@ -84,6 +85,7 @@ section {
 .form-style input[type="email"]:focus,
 .form-style input[type="number"]:focus,
 .form-style input[type="password"]:focus,
+.form-style input[type="date"]:focus,
 .form-style select:focus{
 	background: #d2d9dd;
 }
