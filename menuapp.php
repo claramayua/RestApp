@@ -1,4 +1,5 @@
 <?php
+  //Setting up session 
   session_start();
 ?>
   
@@ -23,10 +24,35 @@
   <body>
  
 <?php
-  $fullname = "";
-  if(isset($_SESSION["login_applicant"])) {
-    $fullname = $_SESSION["login_fullname"];
-	$username = $_SESSION["login_applicant"];
+  //Check login session whether it is an applicant or officer
+  //this to make sure page is accessed manually using its url
+  $loginfullname = "";
+  if(isset($_SESSION["login_userID"])) {
+    $loginuserID = $_SESSION["login_userID"];
+	$host = "localhost";
+	$dbUsername = "root";
+	$dbPassword = "";
+	$dbname = "restapp";
+	//create connection
+	$conn = new mysqli($host, $dbUsername, $dbPassword, $dbname);
+	if (mysqli_connect_error()) {
+		$msg = "Connection Error!";
+		die('Connect Error('. mysqli_connect_errno().')'. mysqli_connect_error());
+	}
+	else {
+		$SELECT = "SELECT staffID From user Where userID = '".$loginuserID."' Limit 1";
+		$stmt = $conn->query($SELECT);
+		if ($stmt->num_rows > 0) {
+			while($row = $stmt->fetch_assoc()) {
+				if(empty($row["staffID"]))
+					$loginfullname = $_SESSION["login_fullname"];
+				else {
+					session_destroy();
+					header('Location: http://localhost/restapp/login.php');
+				}
+			}
+		}
+	}		
   }
   else {
     session_destroy();
@@ -45,7 +71,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="link ml-auto navbar-nav">
 			<li class="nav-item">
-				<a class="nav-link" id="welcome" style="color: white"><b>Welcome <i><?php echo $fullname ?></i></b></a>
+				<a class="nav-link" id="welcome" style="color: white"><b>Welcome <i><?php echo $loginfullname ?></i></b></a>
 			</li>
             <li class="nav-item dropdown">              
 			  <a class="nav-link dropdown-toggle" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Account</a>
